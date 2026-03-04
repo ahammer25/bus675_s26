@@ -605,7 +605,7 @@ class Game:
         elif effect_type == "defense":
             self.player.boost_defense(amount)
 
-        # Remove the item after using it (consumable)
+        # Remove the item after using it 
         self.player.inventory.remove(chosen)
         print(f"✅ Used: {chosen}")
 
