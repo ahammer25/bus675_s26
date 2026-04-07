@@ -14,6 +14,7 @@ import os
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from collections import Counter
 
 import torch
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -209,7 +210,47 @@ async def predict(
 # ============================================================================
 # TODO: Add /health and /stats endpoints (Part 4)
 # ============================================================================
-# Your code here!
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None
+    }
+
+@app.get("/stats")
+def stats():
+    total_items = 0
+    confidence_sum = 0
+    category_counts = Counter()
+
+    if not LOG_PATH.exists():
+        return {
+            "total_items_processed": 0,
+            "breakdown_by_category": {},
+            "average_confidence_score": 0
+        }
+
+    with open(LOG_PATH, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            entry = json.loads(line)
+            total_items += 1
+            confidence_sum += entry.get("confidence", 0)
+
+            top_prediction = entry.get("top_prediction")
+            if top_prediction:
+                category_counts[top_prediction] += 1
+
+    average_confidence = round(confidence_sum / total_items, 2) if total_items > 0 else 0
+
+    return {
+        "total_items_processed": total_items,
+        "breakdown_by_category": dict(category_counts),
+        "average_confidence_score": average_confidence
+    }
 # 
 # /health should return: {"status": "healthy", "model_loaded": true}
 #
